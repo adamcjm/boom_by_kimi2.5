@@ -1,0 +1,1735 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚠️ 拆弹专家 - 生死倒计时 ⚠️</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        
+        * {
+            font-family: 'Share Tech Mono', monospace;
+        }
+        
+        body {
+            background: #0a0a0a;
+            overflow: hidden;
+        }
+        
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.2) 50%,
+                rgba(0,0,0,0.2)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 50;
+        }
+        
+        .crt-flicker {
+            animation: flicker 0.15s infinite;
+        }
+        
+        @keyframes flicker {
+            0% { opacity: 0.97; }
+            50% { opacity: 1; }
+            100% { opacity: 0.98; }
+        }
+        
+        .glitch {
+            animation: glitch 2s infinite;
+        }
+        
+        @keyframes glitch {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+        }
+        
+        .pulse-red {
+            animation: pulseRed 1s infinite;
+        }
+        
+        @keyframes pulseRed {
+            0%, 100% { 
+                box-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000, inset 0 0 20px rgba(255,0,0,0.3);
+                border-color: #ff0000;
+            }
+            50% { 
+                box-shadow: 0 0 40px #ff0000, 0 0 80px #ff0000, inset 0 0 40px rgba(255,0,0,0.5);
+                border-color: #ff3333;
+            }
+        }
+        
+        .pulse-warning {
+            animation: pulseWarning 0.5s infinite;
+        }
+        
+        @keyframes pulseWarning {
+            0%, 100% { 
+                box-shadow: 0 0 30px #ff6600, 0 0 60px #ff6600;
+            }
+            50% { 
+                box-shadow: 0 0 60px #ff6600, 0 0 120px #ff6600;
+            }
+        }
+        
+        .timer-glow {
+            text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 40px currentColor;
+        }
+        
+        .wire {
+            transition: all 0.3s ease;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="%23ccc" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>') 16 16, pointer;
+            position: relative;
+        }
+        
+        .wire:hover {
+            filter: brightness(1.3);
+            transform: scale(1.02);
+        }
+        
+        .wire.cut {
+            opacity: 0.3;
+            filter: grayscale(100%);
+        }
+        
+        .wire.cut::after {
+            content: '✂️';
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 20px;
+            animation: snip 0.3s ease;
+        }
+        
+        @keyframes snip {
+            0% { transform: translateY(-50%) rotate(0deg) scale(1); }
+            50% { transform: translateY(-50%) rotate(-20deg) scale(1.2); }
+            100% { transform: translateY(-50%) rotate(0deg) scale(1); }
+        }
+        
+        .shake {
+            animation: shake 0.5s infinite;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        
+        .heartbeat {
+            animation: heartbeat 1.5s infinite;
+        }
+        
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            14% { transform: scale(1.05); }
+            28% { transform: scale(1); }
+            42% { transform: scale(1.05); }
+            70% { transform: scale(1); }
+        }
+        
+        .code-input {
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #333;
+            color: #0f0;
+            text-shadow: 0 0 10px #0f0;
+        }
+        
+        .code-input:focus {
+            outline: none;
+            border-color: #0f0;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+        }
+        
+        .module {
+            background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
+            border: 2px solid #333;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.05), 0 4px 8px rgba(0,0,0,0.5);
+        }
+        
+        .btn-tech {
+            background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+            border: 2px solid #444;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-tech:hover {
+            background: linear-gradient(145deg, #3a3a3a, #2a2a2a);
+            border-color: #666;
+            box-shadow: 0 0 20px rgba(255,255,255,0.2);
+        }
+        
+        .btn-tech:active {
+            transform: translateY(2px);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(145deg, #4a0000, #2a0000);
+            border-color: #ff0000;
+            color: #ff0000;
+        }
+        
+        .btn-danger:hover {
+            background: linear-gradient(145deg, #6a0000, #4a0000);
+            box-shadow: 0 0 30px rgba(255,0,0,0.5);
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, #ff0000 0%, #ff6600 50%, #ffff00 100%);
+            box-shadow: 0 0 10px currentColor;
+        }
+        
+        .led {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #330000;
+            border: 1px solid #550000;
+            transition: all 0.3s ease;
+        }
+        
+        .led.active {
+            background: #ff0000;
+            box-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000;
+        }
+        
+        .led.safe {
+            background: #00ff00;
+            box-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00;
+        }
+        
+        .led.warning {
+            background: #ffaa00;
+            box-shadow: 0 0 10px #ffaa00, 0 0 20px #ffaa00;
+        }
+        
+        .binary-bg {
+            position: absolute;
+            font-size: 14px;
+            color: rgba(0, 255, 0, 0.1);
+            pointer-events: none;
+            user-select: none;
+        }
+        
+        .warning-text {
+            color: #ff0000;
+            text-shadow: 0 0 10px #ff0000;
+        }
+        
+        .safe-text {
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
+        
+        .panel-corner {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ff0000;
+        }
+        
+        .panel-corner.tl { top: -2px; left: -2px; border-right: none; border-bottom: none; }
+        .panel-corner.tr { top: -2px; right: -2px; border-left: none; border-bottom: none; }
+        .panel-corner.bl { bottom: -2px; left: -2px; border-right: none; border-top: none; }
+        .panel-corner.br { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+        
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #333;
+            transition: .4s;
+            border-radius: 30px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: #666;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #ff0000;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(30px);
+            background-color: #fff;
+        }
+        
+        .log-entry {
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .explosion {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, #ffffff 0%, #ffff00 5%, #ff6600 20%, #ff0000 40%, #660000 60%, #000 80%);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 100;
+        }
+        
+        .explosion.active {
+            animation: explode 3s ease-out forwards;
+        }
+        
+        @keyframes explode {
+            0% { 
+                opacity: 0; 
+                transform: scale(0);
+                filter: brightness(1);
+            }
+            10% { 
+                opacity: 1; 
+                transform: scale(0.5);
+                filter: brightness(3);
+            }
+            30% { 
+                opacity: 1; 
+                transform: scale(1.5);
+                filter: brightness(2);
+            }
+            50% { 
+                opacity: 0.9; 
+                transform: scale(2);
+                filter: brightness(1.5);
+            }
+            70% { 
+                opacity: 0.6; 
+                transform: scale(2.5);
+                filter: brightness(1);
+            }
+            100% { 
+                opacity: 0; 
+                transform: scale(3);
+                filter: brightness(0.5);
+            }
+        }
+        
+        /* 火焰效果 */
+        .fire-particle {
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 99;
+            animation: fire-rise 2s ease-out forwards;
+        }
+        
+        @keyframes fire-rise {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.8;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) scale(0.3);
+                opacity: 0;
+            }
+        }
+        
+        /* 冲击波效果 */
+        .shockwave {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 10px solid rgba(255, 100, 0, 0.8);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 98;
+            opacity: 0;
+        }
+        
+        .shockwave.active {
+            animation: shockwave-expand 2s ease-out forwards;
+        }
+        
+        @keyframes shockwave-expand {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 1;
+                border-width: 20px;
+            }
+            100% {
+                width: 200vmax;
+                height: 200vmax;
+                opacity: 0;
+                border-width: 0;
+            }
+        }
+        
+        /* 屏幕震动效果 */
+        .screen-shake {
+            animation: screenShake 0.5s ease-in-out;
+        }
+        
+        @keyframes screenShake {
+            0%, 100% { transform: translate(0, 0); }
+            10% { transform: translate(-10px, 10px); }
+            20% { transform: translate(10px, -10px); }
+            30% { transform: translate(-10px, -10px); }
+            40% { transform: translate(10px, 10px); }
+            50% { transform: translate(-5px, 5px); }
+            60% { transform: translate(5px, -5px); }
+            70% { transform: translate(-5px, -5px); }
+            80% { transform: translate(5px, 5px); }
+            90% { transform: translate(-2px, 2px); }
+        }
+        
+        .difficulty-easy { color: #00ff00; }
+        .difficulty-medium { color: #ffaa00; }
+        .difficulty-hard { color: #ff0000; }
+        
+        /* 炸弹Canvas样式 */
+        #bomb-canvas {
+            border-radius: 50%;
+            box-shadow: 0 0 50px rgba(255, 0, 0, 0.5);
+        }
+        
+        /* 火花效果 */
+        .spark {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: radial-gradient(circle, #ffff00 0%, #ff6600 50%, transparent 100%);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: spark-fly 0.8s ease-out forwards;
+        }
+        
+        @keyframes spark-fly {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) scale(0);
+                opacity: 0;
+            }
+        }
+        
+        /* 烟雾效果 */
+        .smoke {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle, rgba(100,100,100,0.8) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: smoke-rise 2s ease-out forwards;
+        }
+        
+        @keyframes smoke-rise {
+            0% {
+                transform: translateY(0) scale(0.5);
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(-100px) scale(3);
+                opacity: 0;
+            }
+        }
+        
+        /* 剪刀光标动画 */
+        .cutting {
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="%23ff0000" stroke-width="2"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>') 16 16, pointer;
+        }
+        
+        /* 炸弹震动 */
+        .bomb-shake {
+            animation: bombShake 0.1s infinite;
+        }
+        
+        @keyframes bombShake {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(-2px, 2px) rotate(-1deg); }
+            50% { transform: translate(2px, -2px) rotate(1deg); }
+            75% { transform: translate(-2px, -2px) rotate(-1deg); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center crt-flicker">
+    <div class="scanline"></div>
+    <div class="explosion" id="explosion"></div>
+    <div class="shockwave" id="shockwave"></div>
+    <div id="fire-container" class="fixed inset-0 pointer-events-none z-50"></div>
+    
+    <!-- 背景二进制代码 -->
+    <div id="binary-bg" class="fixed inset-0 overflow-hidden pointer-events-none"></div>
+    
+    <!-- 主游戏容器 -->
+    <div class="relative w-full max-w-7xl mx-4">
+        
+        <!-- 开始界面 -->
+        <div id="start-screen" class="module rounded-lg p-8 pulse-red relative">
+            <div class="panel-corner tl"></div>
+            <div class="panel-corner tr"></div>
+            <div class="panel-corner bl"></div>
+            <div class="panel-corner br"></div>
+            
+            <div class="text-center">
+                <h1 class="text-6xl font-bold mb-4 glitch">
+                    <span class="warning-text">⚠️ 拆弹专家 ⚠️</span>
+                </h1>
+                <p class="text-gray-400 text-xl mb-2">BOMB DEFUSAL EXPERT</p>
+                <div class="h-1 w-64 mx-auto bg-gradient-to-r from-transparent via-red-500 to-transparent mb-8"></div>
+                
+                <!-- 炸弹预览 -->
+                <div class="flex justify-center mb-8">
+                    <canvas id="preview-bomb" width="200" height="200"></canvas>
+                </div>
+                
+                <div class="mb-8">
+                    <p class="text-red-400 text-lg mb-4">目标时间: 下午 6:00:00</p>
+                    <p class="text-gray-300 mb-2">你只有 <span class="warning-text">3 次机会</span> 拆除炸弹</p>
+                    <p class="text-gray-400 text-sm">在时间耗尽前完成所有拆弹模块</p>
+                </div>
+                
+                <div class="mb-8">
+                    <p class="text-gray-300 mb-4">选择难度等级:</p>
+                    <div class="flex justify-center gap-4">
+                        <button onclick="startGame('easy')" class="btn-tech px-8 py-4 rounded difficulty-easy border-green-500">
+                            <div class="text-2xl">简单</div>
+                            <div class="text-xs text-gray-400">EASY</div>
+                        </button>
+                        <button onclick="startGame('medium')" class="btn-tech px-8 py-4 rounded difficulty-medium border-yellow-500">
+                            <div class="text-2xl">中等</div>
+                            <div class="text-xs text-gray-400">MEDIUM</div>
+                        </button>
+                        <button onclick="startGame('hard')" class="btn-tech px-8 py-4 rounded difficulty-hard border-red-500">
+                            <div class="text-2xl">困难</div>
+                            <div class="text-xs text-gray-400">HARD</div>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="text-gray-500 text-sm">
+                    <p>⚠️ 警告: 本游戏包含紧张刺激的内容 ⚠️</p>
+                    <p class="mt-2">请确保你有足够的心理承受能力</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 游戏主界面 -->
+        <div id="game-screen" class="hidden">
+            <!-- 顶部状态栏 -->
+            <div class="module rounded-lg p-4 mb-4 flex justify-between items-center">
+                <div class="flex items-center gap-6">
+                    <div>
+                        <span class="text-gray-400 text-sm">剩余机会</span>
+                        <div class="flex gap-2 mt-1" id="lives-display">
+                            <div class="led active"></div>
+                            <div class="led active"></div>
+                            <div class="led active"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="text-gray-400 text-sm">难度</span>
+                        <div id="difficulty-display" class="text-xl font-bold"></div>
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <div class="text-gray-400 text-sm mb-1">距离爆炸还有</div>
+                    <div id="countdown" class="text-4xl font-bold timer-glow text-red-500">00:00:00.000</div>
+                </div>
+                
+                <div class="text-right">
+                    <div class="text-gray-400 text-sm">已解决模块</div>
+                    <div class="text-2xl safe-text"><span id="solved-count">0</span> / <span id="total-modules">3</span></div>
+                </div>
+            </div>
+            
+            <!-- 炸弹展示区 -->
+            <div class="flex justify-center mb-6">
+                <div id="bomb-container" class="relative">
+                    <canvas id="bomb-canvas" width="400" height="400"></canvas>
+                    <div id="sparks-container" class="absolute inset-0 pointer-events-none"></div>
+                </div>
+            </div>
+            
+            <!-- 游戏区域 -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                
+                <!-- 剪线模块 -->
+                <div id="wire-module" class="module rounded-lg p-6 relative">
+                    <div class="panel-corner tl"></div>
+                    <div class="panel-corner tr"></div>
+                    <div class="panel-corner bl"></div>
+                    <div class="panel-corner br"></div>
+                    
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl warning-text">⚡ 剪线模块</h3>
+                        <div class="led" id="wire-status"></div>
+                    </div>
+                    
+                    <div class="bg-black rounded p-4 mb-4">
+                        <p class="text-gray-400 text-sm mb-2">指令:</p>
+                        <p id="wire-instruction" class="text-yellow-400 text-sm"></p>
+                    </div>
+                    
+                    <div id="wires-container" class="space-y-3">
+                        <!-- 动态生成电线 -->
+                    </div>
+                    
+                    <div id="wire-result" class="mt-4 text-center hidden"></div>
+                </div>
+                
+                <!-- 密码模块 -->
+                <div id="code-module" class="module rounded-lg p-6 relative">
+                    <div class="panel-corner tl"></div>
+                    <div class="panel-corner tr"></div>
+                    <div class="panel-corner bl"></div>
+                    <div class="panel-corner br"></div>
+                    
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl warning-text">🔐 密码模块</h3>
+                        <div class="led" id="code-status"></div>
+                    </div>
+                    
+                    <div class="bg-black rounded p-4 mb-4">
+                        <p class="text-gray-400 text-sm mb-2">提示:</p>
+                        <p id="code-hint" class="text-cyan-400 text-sm"></p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <input type="text" id="code-input" class="code-input w-full px-4 py-3 text-2xl text-center rounded" maxlength="4" placeholder="????" readonly>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="enterDigit('1')" class="btn-tech py-3 rounded text-xl">1</button>
+                        <button onclick="enterDigit('2')" class="btn-tech py-3 rounded text-xl">2</button>
+                        <button onclick="enterDigit('3')" class="btn-tech py-3 rounded text-xl">3</button>
+                        <button onclick="enterDigit('4')" class="btn-tech py-3 rounded text-xl">4</button>
+                        <button onclick="enterDigit('5')" class="btn-tech py-3 rounded text-xl">5</button>
+                        <button onclick="enterDigit('6')" class="btn-tech py-3 rounded text-xl">6</button>
+                        <button onclick="enterDigit('7')" class="btn-tech py-3 rounded text-xl">7</button>
+                        <button onclick="enterDigit('8')" class="btn-tech py-3 rounded text-xl">8</button>
+                        <button onclick="enterDigit('9')" class="btn-tech py-3 rounded text-xl">9</button>
+                        <button onclick="clearCode()" class="btn-tech py-3 rounded text-xl text-red-400">C</button>
+                        <button onclick="enterDigit('0')" class="btn-tech py-3 rounded text-xl">0</button>
+                        <button onclick="submitCode()" class="btn-tech py-3 rounded text-xl text-green-400">✓</button>
+                    </div>
+                    
+                    <div id="code-result" class="mt-4 text-center hidden"></div>
+                </div>
+                
+                <!-- 开关模块 -->
+                <div id="switch-module" class="module rounded-lg p-6 relative">
+                    <div class="panel-corner tl"></div>
+                    <div class="panel-corner tr"></div>
+                    <div class="panel-corner bl"></div>
+                    <div class="panel-corner br"></div>
+                    
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl warning-text">🔌 开关模块</h3>
+                        <div class="led" id="switch-status"></div>
+                    </div>
+                    
+                    <div class="bg-black rounded p-4 mb-4">
+                        <p class="text-gray-400 text-sm mb-2">目标状态:</p>
+                        <p id="switch-instruction" class="text-purple-400 text-sm"></p>
+                    </div>
+                    
+                    <div id="switches-container" class="space-y-4">
+                        <!-- 动态生成开关 -->
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button onclick="checkSwitches()" class="btn-tech w-full py-3 rounded text-lg">确认开关状态</button>
+                    </div>
+                    
+                    <div id="switch-result" class="mt-4 text-center hidden"></div>
+                </div>
+            </div>
+            
+            <!-- 系统日志 -->
+            <div class="module rounded-lg p-4 mt-4">
+                <h4 class="text-gray-400 text-sm mb-2">📋 系统日志</h4>
+                <div id="system-log" class="h-32 overflow-y-auto text-sm space-y-1 font-mono">
+                    <div class="log-entry text-gray-500">[系统] 炸弹已启动...</div>
+                    <div class="log-entry text-gray-500">[系统] 等待拆弹操作...</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 游戏结束界面 -->
+        <div id="end-screen" class="hidden module rounded-lg p-8 text-center relative">
+            <div class="panel-corner tl"></div>
+            <div class="panel-corner tr"></div>
+            <div class="panel-corner bl"></div>
+            <div class="panel-corner br"></div>
+            
+            <div id="end-icon" class="text-8xl mb-4"></div>
+            <h2 id="end-title" class="text-5xl font-bold mb-4"></h2>
+            <p id="end-message" class="text-xl mb-8"></p>
+            
+            <div class="mb-8">
+                <p class="text-gray-400">最终统计</p>
+                <div class="flex justify-center gap-8 mt-4">
+                    <div>
+                        <div class="text-gray-400 text-sm">剩余时间</div>
+                        <div id="final-time" class="text-2xl"></div>
+                    </div>
+                    <div>
+                        <div class="text-gray-400 text-sm">解决模块</div>
+                        <div id="final-modules" class="text-2xl safe-text"></div>
+                    </div>
+                    <div>
+                        <div class="text-gray-400 text-sm">剩余机会</div>
+                        <div id="final-lives" class="text-2xl warning-text"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="location.reload()" class="btn-tech px-8 py-4 rounded text-xl">
+                再次挑战
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        // 游戏状态
+        let gameState = {
+            difficulty: 'easy',
+            lives: 3,
+            modulesSolved: 0,
+            totalModules: 3,
+            targetTime: null,
+            timeRemaining: 0, // 现在以秒为单位，但包含小数表示毫秒
+            lastUpdateTime: 0,
+            timerInterval: null,
+            wireSolved: false,
+            codeSolved: false,
+            switchSolved: false,
+            currentCode: '',
+            targetCode: '',
+            wireOrder: [],
+            correctWire: -1,
+            switchStates: [],
+            targetSwitchStates: [],
+            bombShakeIntensity: 0,
+            sparkInterval: null
+        };
+        
+        // 难度配置
+        const difficultyConfig = {
+            easy: {
+                name: '简单',
+                class: 'difficulty-easy',
+                timeMultiplier: 1.5,
+                wireCount: 4,
+                switchCount: 3
+            },
+            medium: {
+                name: '中等',
+                class: 'difficulty-medium',
+                timeMultiplier: 1,
+                wireCount: 5,
+                switchCount: 4
+            },
+            hard: {
+                name: '困难',
+                class: 'difficulty-hard',
+                timeMultiplier: 0.7,
+                wireCount: 6,
+                switchCount: 5
+            }
+        };
+        
+        // 电线颜色
+        const wireColors = [
+            { name: '红色', color: '#ff0000', bg: 'bg-red-600' },
+            { name: '蓝色', color: '#0066ff', bg: 'bg-blue-600' },
+            { name: '黄色', color: '#ffcc00', bg: 'bg-yellow-500' },
+            { name: '白色', color: '#ffffff', bg: 'bg-gray-200' },
+            { name: '黑色', color: '#333333', bg: 'bg-gray-800' },
+            { name: '绿色', color: '#00ff00', bg: 'bg-green-500' }
+        ];
+        
+        // 音频上下文
+        let audioContext = null;
+        
+        // 初始化音频
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        
+        // 播放音效
+        function playSound(type) {
+            if (!audioContext) initAudio();
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            const now = audioContext.currentTime;
+            
+            switch(type) {
+                case 'cut':
+                    // 剪刀声
+                    oscillator.type = 'sawtooth';
+                    oscillator.frequency.setValueAtTime(800, now);
+                    oscillator.frequency.exponentialRampToValueAtTime(400, now + 0.1);
+                    gainNode.gain.setValueAtTime(0.3, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    oscillator.start(now);
+                    oscillator.stop(now + 0.1);
+                    break;
+                    
+                case 'beep':
+                    // 按键声
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(1200, now);
+                    gainNode.gain.setValueAtTime(0.2, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                    oscillator.start(now);
+                    oscillator.stop(now + 0.05);
+                    break;
+                    
+                case 'error':
+                    // 错误声
+                    oscillator.type = 'sawtooth';
+                    oscillator.frequency.setValueAtTime(150, now);
+                    oscillator.frequency.linearRampToValueAtTime(100, now + 0.3);
+                    gainNode.gain.setValueAtTime(0.4, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    oscillator.start(now);
+                    oscillator.stop(now + 0.3);
+                    break;
+                    
+                case 'success':
+                    // 成功声
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(523.25, now);
+                    oscillator.frequency.setValueAtTime(659.25, now + 0.1);
+                    oscillator.frequency.setValueAtTime(783.99, now + 0.2);
+                    gainNode.gain.setValueAtTime(0.3, now);
+                    gainNode.gain.linearRampToValueAtTime(0, now + 0.4);
+                    oscillator.start(now);
+                    oscillator.stop(now + 0.4);
+                    break;
+                    
+                case 'tick':
+                    // 滴答声
+                    oscillator.type = 'square';
+                    oscillator.frequency.setValueAtTime(1000, now);
+                    gainNode.gain.setValueAtTime(0.1, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.02);
+                    oscillator.start(now);
+                    oscillator.stop(now + 0.02);
+                    break;
+                    
+                case 'explosion':
+                    // 爆炸声
+                    oscillator.type = 'sawtooth';
+                    oscillator.frequency.setValueAtTime(100, now);
+                    oscillator.frequency.exponentialRampToValueAtTime(20, now + 1);
+                    gainNode.gain.setValueAtTime(0.8, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 1.5);
+                    oscillator.start(now);
+                    oscillator.stop(now + 1.5);
+                    break;
+                    
+                case 'spark':
+                    // 火花声
+                    oscillator.type = 'square';
+                    oscillator.frequency.setValueAtTime(2000 + Math.random() * 1000, now);
+                    gainNode.gain.setValueAtTime(0.1, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                    oscillator.start(now);
+                    oscillator.stop(now + 0.05);
+                    break;
+            }
+        }
+        
+        // 炸弹Canvas绘制
+        function drawBomb(canvas, timeProgress = 0, isShaking = false) {
+            const ctx = canvas.getContext('2d');
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = 140; // 增大炸弹半径
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 震动偏移
+            let offsetX = 0, offsetY = 0;
+            if (isShaking) {
+                offsetX = (Math.random() - 0.5) * gameState.bombShakeIntensity;
+                offsetY = (Math.random() - 0.5) * gameState.bombShakeIntensity;
+            }
+            
+            ctx.save();
+            ctx.translate(centerX + offsetX, centerY + offsetY);
+            
+            // 炸弹主体阴影
+            ctx.beginPath();
+            ctx.arc(8, 8, radius, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fill();
+            
+            // 炸弹主体渐变
+            const gradient = ctx.createRadialGradient(-30, -30, 0, 0, 0, radius);
+            gradient.addColorStop(0, '#555');
+            gradient.addColorStop(0.3, '#333');
+            gradient.addColorStop(0.7, '#1a1a1a');
+            gradient.addColorStop(1, '#000');
+            
+            ctx.beginPath();
+            ctx.arc(0, 0, radius, 0, Math.PI * 2);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            
+            // 金属边框
+            ctx.beginPath();
+            ctx.arc(0, 0, radius, 0, Math.PI * 2);
+            ctx.strokeStyle = '#888';
+            ctx.lineWidth = 6;
+            ctx.stroke();
+            
+            // 内圈装饰线
+            ctx.beginPath();
+            ctx.arc(0, 0, radius - 15, 0, Math.PI * 2);
+            ctx.strokeStyle = '#444';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // 顶部引信座
+            ctx.fillStyle = '#2a2a2a';
+            ctx.fillRect(-40, -radius - 25, 80, 35);
+            
+            // 引信座边框
+            ctx.strokeStyle = '#555';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(-40, -radius - 25, 80, 35);
+            
+            // 引信
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 12;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(0, -radius - 25);
+            ctx.quadraticCurveTo(30, -radius - 60, 60, -radius - 45);
+            ctx.stroke();
+            
+            // 引信火花
+            if (timeProgress > 0.5) {
+                const sparkX = 60;
+                const sparkY = -radius - 45;
+                const sparkGradient = ctx.createRadialGradient(sparkX, sparkY, 0, sparkX, sparkY, 15);
+                sparkGradient.addColorStop(0, 'rgba(255, 255, 200, 1)');
+                sparkGradient.addColorStop(0.3, 'rgba(255, 200, 0, 0.9)');
+                sparkGradient.addColorStop(0.7, 'rgba(255, 100, 0, 0.6)');
+                sparkGradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
+                
+                ctx.beginPath();
+                ctx.arc(sparkX, sparkY, 15, 0, Math.PI * 2);
+                ctx.fillStyle = sparkGradient;
+                ctx.fill();
+            }
+            
+            // 火花（根据时间进度增加）
+            const sparkCount = Math.floor(timeProgress * 15);
+            for (let i = 0; i < sparkCount; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const distance = radius + 15 + Math.random() * 40;
+                const x = Math.cos(angle) * distance;
+                const y = Math.sin(angle) * distance;
+                const size = 3 + Math.random() * 6;
+                
+                // 火花光晕
+                const sparkGradient = ctx.createRadialGradient(x, y, 0, x, y, size * 2);
+                sparkGradient.addColorStop(0, 'rgba(255, 255, 0, 1)');
+                sparkGradient.addColorStop(0.5, 'rgba(255, 100, 0, 0.8)');
+                sparkGradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
+                
+                ctx.beginPath();
+                ctx.arc(x, y, size * 2, 0, Math.PI * 2);
+                ctx.fillStyle = sparkGradient;
+                ctx.fill();
+            }
+            
+            // 中心显示屏 - 增大尺寸
+            ctx.fillStyle = '#000';
+            ctx.fillRect(-90, -50, 180, 100);
+            
+            // 显示屏边框
+            ctx.strokeStyle = '#444';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(-90, -50, 180, 100);
+            
+            // 内边框
+            ctx.strokeStyle = '#222';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(-85, -45, 170, 90);
+            
+            // 倒计时数字 - 包含毫秒
+            const hours = Math.floor(gameState.timeRemaining / 3600);
+            const minutes = Math.floor((gameState.timeRemaining % 3600) / 60);
+            const seconds = Math.floor(gameState.timeRemaining % 60);
+            const milliseconds = Math.floor((gameState.timeRemaining % 1) * 1000);
+            const timeStr = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(3, '0')}`;
+            
+            ctx.font = 'bold 36px "Share Tech Mono", monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // 文字发光效果
+            ctx.shadowColor = '#ff0000';
+            ctx.shadowBlur = 30;
+            ctx.fillStyle = '#ff0000';
+            ctx.fillText(timeStr, 0, 5);
+            
+            // 毫秒小数点闪烁效果
+            if (Math.floor(Date.now() / 200) % 2 === 0) {
+                ctx.fillStyle = '#ff3333';
+                ctx.fillText('.', 2, 5);
+            }
+            
+            ctx.shadowBlur = 0;
+            
+            // LED指示灯 - 增大并重新定位
+            const ledColors = ['#ff0000', '#ff0000', '#ff0000'];
+            for (let i = 0; i < gameState.lives; i++) {
+                ledColors[i] = '#00ff00';
+            }
+            
+            for (let i = 0; i < 3; i++) {
+                const ledX = -70 + i * 70;
+                const ledY = -85;
+                
+                // LED外圈
+                ctx.beginPath();
+                ctx.arc(ledX, ledY, 10, 0, Math.PI * 2);
+                ctx.fillStyle = '#222';
+                ctx.fill();
+                ctx.strokeStyle = '#444';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // LED灯
+                ctx.beginPath();
+                ctx.arc(ledX, ledY, 7, 0, Math.PI * 2);
+                ctx.fillStyle = ledColors[i];
+                ctx.shadowColor = ledColors[i];
+                ctx.shadowBlur = 15;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+            
+            // 警告条纹 - 增大
+            ctx.save();
+            ctx.rotate(Math.PI / 4);
+            for (let i = -5; i <= 5; i++) {
+                ctx.fillStyle = i % 2 === 0 ? '#ffcc00' : '#000';
+                ctx.fillRect(i * 25 - 12, -radius - 15, 20, 12);
+            }
+            ctx.restore();
+            
+            ctx.restore();
+        }
+        
+        // 创建火花粒子
+        function createSpark(x, y, intensity = 1) {
+            const container = document.getElementById('sparks-container');
+            const sparkCount = 5 * intensity;
+            
+            for (let i = 0; i < sparkCount; i++) {
+                const spark = document.createElement('div');
+                spark.className = 'spark';
+                
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 50 + Math.random() * 100;
+                const tx = Math.cos(angle) * distance;
+                const ty = Math.sin(angle) * distance;
+                
+                spark.style.left = x + 'px';
+                spark.style.top = y + 'px';
+                spark.style.setProperty('--tx', tx + 'px');
+                spark.style.setProperty('--ty', ty + 'px');
+                
+                container.appendChild(spark);
+                
+                setTimeout(() => spark.remove(), 800);
+            }
+            
+            // 播放火花音效
+            if (Math.random() > 0.7) {
+                playSound('spark');
+            }
+        }
+        
+        // 创建烟雾
+        function createSmoke(x, y) {
+            const container = document.getElementById('sparks-container');
+            
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => {
+                    const smoke = document.createElement('div');
+                    smoke.className = 'smoke';
+                    smoke.style.left = (x + (Math.random() - 0.5) * 40) + 'px';
+                    smoke.style.top = (y + (Math.random() - 0.5) * 40) + 'px';
+                    container.appendChild(smoke);
+                    setTimeout(() => smoke.remove(), 2000);
+                }, i * 200);
+            }
+        }
+        
+        // 开始火花效果
+        function startSparkEffect() {
+            const canvas = document.getElementById('bomb-canvas');
+            
+            gameState.sparkInterval = setInterval(() => {
+                if (gameState.timeRemaining <= 60) {
+                    // 时间紧迫时火花更频繁
+                    const intensity = gameState.timeRemaining <= 30 ? 2 : 1;
+                    createSpark(200, 200, intensity);
+                    gameState.bombShakeIntensity = gameState.timeRemaining <= 30 ? 10 : 6;
+                    
+                    // 重绘画布
+                    const timeProgress = 1 - (gameState.timeRemaining / 7200);
+                    drawBomb(canvas, timeProgress, true);
+                } else {
+                    gameState.bombShakeIntensity = 0;
+                    const timeProgress = 1 - (gameState.timeRemaining / 7200);
+                    drawBomb(canvas, timeProgress, false);
+                }
+            }, 50); // 改为50ms以实现毫秒级更新
+        }
+        
+        // 初始化背景二进制
+        function initBinaryBackground() {
+            const container = document.getElementById('binary-bg');
+            for (let i = 0; i < 50; i++) {
+                const span = document.createElement('span');
+                span.className = 'binary-bg';
+                span.style.left = Math.random() * 100 + '%';
+                span.style.top = Math.random() * 100 + '%';
+                span.textContent = Math.random() > 0.5 ? '1' : '0';
+                span.style.animation = `pulseRed ${2 + Math.random() * 3}s infinite`;
+                container.appendChild(span);
+            }
+        }
+        
+        // 开始游戏
+        function startGame(difficulty) {
+            // 初始化音频（需要用户交互）
+            initAudio();
+            
+            gameState.difficulty = difficulty;
+            const config = difficultyConfig[difficulty];
+            
+            // 计算目标时间（今天下午6点）
+            const now = new Date();
+            gameState.targetTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 18, 0, 0);
+            if (gameState.targetTime <= now) {
+                gameState.targetTime.setDate(gameState.targetTime.getDate() + 1);
+            }
+            
+            // 根据难度调整时间
+            const baseTime = gameState.targetTime - now;
+            gameState.timeRemaining = baseTime / 1000; // 保留小数表示毫秒
+            gameState.lastUpdateTime = Date.now();
+            
+            // 显示游戏界面
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            
+            // 更新难度显示
+            const diffDisplay = document.getElementById('difficulty-display');
+            diffDisplay.textContent = config.name;
+            diffDisplay.className = `text-xl font-bold ${config.class}`;
+            
+            document.getElementById('total-modules').textContent = gameState.totalModules;
+            
+            // 初始化炸弹画布
+            const bombCanvas = document.getElementById('bomb-canvas');
+            drawBomb(bombCanvas, 0, false);
+            startSparkEffect();
+            
+            // 初始化模块
+            initWireModule();
+            initCodeModule();
+            initSwitchModule();
+            
+            // 启动倒计时
+            startTimer();
+            
+            addLog('游戏开始！难度: ' + config.name, 'warning');
+            addLog('炸弹已激活，请尽快拆除！', 'danger');
+            
+            // 播放启动音效
+            playSound('success');
+        }
+        
+        // 启动计时器 - 使用requestAnimationFrame实现毫秒级精度
+        function startTimer() {
+            updateTimerDisplay();
+            
+            function tick() {
+                const now = Date.now();
+                const deltaTime = (now - gameState.lastUpdateTime) / 1000;
+                gameState.lastUpdateTime = now;
+                
+                gameState.timeRemaining -= deltaTime;
+                
+                // 每100ms更新一次显示
+                updateTimerDisplay();
+                
+                // 每秒播放一次滴答声
+                const currentSecond = Math.floor(gameState.timeRemaining);
+                if (currentSecond <= 60 && currentSecond !== gameState.lastTickSecond) {
+                    gameState.lastTickSecond = currentSecond;
+                    playSound('tick');
+                }
+                
+                if (gameState.timeRemaining <= 0) {
+                    gameOver(false, '时间耗尽！炸弹爆炸了！');
+                    return;
+                } else if (gameState.timeRemaining <= 60) {
+                    document.getElementById('countdown').classList.add('pulse-warning');
+                }
+                
+                gameState.timerInterval = requestAnimationFrame(tick);
+            }
+            
+            gameState.lastTickSecond = Math.floor(gameState.timeRemaining);
+            gameState.timerInterval = requestAnimationFrame(tick);
+        }
+        
+        // 更新计时器显示 - 包含毫秒
+        function updateTimerDisplay() {
+            const hours = Math.floor(gameState.timeRemaining / 3600);
+            const minutes = Math.floor((gameState.timeRemaining % 3600) / 60);
+            const seconds = Math.floor(gameState.timeRemaining % 60);
+            const milliseconds = Math.floor((gameState.timeRemaining % 1) * 1000);
+            
+            const display = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(3, '0')}`;
+            document.getElementById('countdown').textContent = display;
+        }
+        
+        // 初始化剪线模块
+        function initWireModule() {
+            const config = difficultyConfig[gameState.difficulty];
+            const container = document.getElementById('wires-container');
+            container.innerHTML = '';
+            
+            // 随机选择电线
+            const wireCount = config.wireCount;
+            gameState.wireOrder = [];
+            const usedColors = [];
+            
+            for (let i = 0; i < wireCount; i++) {
+                let color;
+                do {
+                    color = wireColors[Math.floor(Math.random() * wireColors.length)];
+                } while (usedColors.includes(color.name));
+                usedColors.push(color.name);
+                gameState.wireOrder.push(color);
+            }
+            
+            // 确定正确的电线
+            const colorCounts = {};
+            gameState.wireOrder.forEach(w => {
+                colorCounts[w.name] = (colorCounts[w.name] || 0) + 1;
+            });
+            
+            // 根据规则选择正确的电线
+            const rules = [
+                '如果最后一根是红色，剪第三根',
+                '如果蓝色电线多于一根，剪最后一根蓝色',
+                '如果黄色电线是奇数，剪第一根',
+                '否则，剪最后一根'
+            ];
+            
+            const ruleIndex = Math.floor(Math.random() * rules.length);
+            document.getElementById('wire-instruction').textContent = rules[ruleIndex];
+            
+            // 根据规则确定正确答案
+            if (ruleIndex === 0 && gameState.wireOrder[wireCount - 1].name === '红色') {
+                gameState.correctWire = 2;
+            } else if (ruleIndex === 1 && (colorCounts['蓝色'] || 0) > 1) {
+                for (let i = wireCount - 1; i >= 0; i--) {
+                    if (gameState.wireOrder[i].name === '蓝色') {
+                        gameState.correctWire = i;
+                        break;
+                    }
+                }
+            } else if (ruleIndex === 2 && ((colorCounts['黄色'] || 0) % 2 === 1)) {
+                gameState.correctWire = 0;
+            } else {
+                gameState.correctWire = wireCount - 1;
+            }
+            
+            // 创建电线
+            gameState.wireOrder.forEach((wire, index) => {
+                const wireDiv = document.createElement('div');
+                wireDiv.className = 'wire flex items-center gap-4 p-3 rounded bg-gray-900';
+                wireDiv.onclick = () => cutWire(index);
+                wireDiv.innerHTML = `
+                    <div class="w-8 h-8 rounded-full ${wire.bg} border-2 border-gray-600 shadow-lg" style="box-shadow: 0 0 10px ${wire.color}"></div>
+                    <div class="flex-1 h-4 rounded ${wire.bg}" style="background: linear-gradient(90deg, ${wire.color} 0%, ${wire.color}dd 50%, ${wire.color} 100%)"></div>
+                    <span class="text-gray-400 text-sm">#${index + 1}</span>
+                `;
+                container.appendChild(wireDiv);
+            });
+        }
+        
+        // 剪线
+        function cutWire(index) {
+            if (gameState.wireSolved) return;
+            
+            // 播放剪线音效
+            playSound('cut');
+            
+            const wires = document.getElementById('wires-container').children;
+            wires[index].classList.add('cut');
+            
+            // 创建火花效果
+            const rect = wires[index].getBoundingClientRect();
+            const containerRect = document.getElementById('sparks-container').getBoundingClientRect();
+            createSpark(rect.left - containerRect.left + rect.width / 2, rect.top - containerRect.top + rect.height / 2, 2);
+            
+            if (index === gameState.correctWire) {
+                gameState.wireSolved = true;
+                gameState.modulesSolved++;
+                document.getElementById('wire-status').classList.add('safe');
+                document.getElementById('solved-count').textContent = gameState.modulesSolved;
+                document.getElementById('wire-result').innerHTML = '<span class="safe-text">✓ 模块已解除</span>';
+                document.getElementById('wire-result').classList.remove('hidden');
+                addLog('剪线模块已解除！', 'success');
+                playSound('success');
+                checkWin();
+            } else {
+                // 创建烟雾效果
+                createSmoke(rect.left - containerRect.left + rect.width / 2, rect.top - containerRect.top + rect.height / 2);
+                loseLife('剪错电线！');
+            }
+        }
+        
+        // 初始化密码模块
+        function initCodeModule() {
+            // 生成目标密码
+            gameState.targetCode = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+            
+            // 生成提示
+            const hints = [
+                `第一位是 ${gameState.targetCode[0]}`,
+                `最后一位是 ${gameState.targetCode[3]}`,
+                `四位数字之和是 ${gameState.targetCode.split('').reduce((a, b) => a + parseInt(b), 0)}`,
+                `密码在 ${parseInt(gameState.targetCode) - 50} 到 ${parseInt(gameState.targetCode) + 50} 之间`
+            ];
+            
+            const hintIndex = Math.floor(Math.random() * hints.length);
+            document.getElementById('code-hint').textContent = hints[hintIndex];
+            
+            gameState.currentCode = '';
+            document.getElementById('code-input').value = '';
+        }
+        
+        // 输入数字
+        function enterDigit(digit) {
+            if (gameState.codeSolved || gameState.currentCode.length >= 4) return;
+            
+            playSound('beep');
+            gameState.currentCode += digit;
+            document.getElementById('code-input').value = gameState.currentCode;
+        }
+        
+        // 清除密码
+        function clearCode() {
+            if (gameState.codeSolved) return;
+            
+            playSound('beep');
+            gameState.currentCode = '';
+            document.getElementById('code-input').value = '';
+        }
+        
+        // 提交密码
+        function submitCode() {
+            if (gameState.codeSolved) return;
+            
+            if (gameState.currentCode === gameState.targetCode) {
+                gameState.codeSolved = true;
+                gameState.modulesSolved++;
+                document.getElementById('code-status').classList.add('safe');
+                document.getElementById('code-result').innerHTML = '<span class="safe-text">✓ 密码正确</span>';
+                document.getElementById('code-result').classList.remove('hidden');
+                document.getElementById('code-input').classList.add('safe-text');
+                addLog('密码模块已解除！', 'success');
+                playSound('success');
+                checkWin();
+            } else {
+                playSound('error');
+                loseLife('密码错误！');
+                gameState.currentCode = '';
+                document.getElementById('code-input').value = '';
+            }
+        }
+        
+        // 初始化开关模块
+        function initSwitchModule() {
+            const config = difficultyConfig[gameState.difficulty];
+            const container = document.getElementById('switches-container');
+            container.innerHTML = '';
+            
+            const switchCount = config.switchCount;
+            gameState.switchStates = new Array(switchCount).fill(false);
+            gameState.targetSwitchStates = [];
+            
+            // 生成目标状态
+            for (let i = 0; i < switchCount; i++) {
+                gameState.targetSwitchStates.push(Math.random() > 0.5);
+            }
+            
+            // 显示提示
+            const onCount = gameState.targetSwitchStates.filter(s => s).length;
+            document.getElementById('switch-instruction').textContent = `开启 ${onCount} 个开关，关闭 ${switchCount - onCount} 个开关`;
+            
+            // 创建开关
+            for (let i = 0; i < switchCount; i++) {
+                const switchDiv = document.createElement('div');
+                switchDiv.className = 'flex items-center justify-between bg-gray-900 p-3 rounded';
+                switchDiv.innerHTML = `
+                    <span class="text-gray-400">开关 ${i + 1}</span>
+                    <label class="switch">
+                        <input type="checkbox" id="switch-${i}" onchange="toggleSwitch(${i})">
+                        <span class="slider"></span>
+                    </label>
+                `;
+                container.appendChild(switchDiv);
+            }
+        }
+        
+        // 切换开关
+        function toggleSwitch(index) {
+            if (gameState.switchSolved) return;
+            
+            playSound('beep');
+            gameState.switchStates[index] = document.getElementById(`switch-${index}`).checked;
+        }
+        
+        // 检查开关
+        function checkSwitches() {
+            if (gameState.switchSolved) return;
+            
+            const correct = gameState.switchStates.every((state, index) => 
+                state === gameState.targetSwitchStates[index]
+            );
+            
+            if (correct) {
+                gameState.switchSolved = true;
+                gameState.modulesSolved++;
+                document.getElementById('switch-status').classList.add('safe');
+                document.getElementById('switch-result').innerHTML = '<span class="safe-text">✓ 开关配置正确</span>';
+                document.getElementById('switch-result').classList.remove('hidden');
+                addLog('开关模块已解除！', 'success');
+                playSound('success');
+                checkWin();
+            } else {
+                playSound('error');
+                loseLife('开关配置错误！');
+            }
+        }
+        
+        // 失去生命
+        function loseLife(reason) {
+            gameState.lives--;
+            updateLivesDisplay();
+            
+            // 震动效果
+            document.body.classList.add('shake');
+            document.getElementById('bomb-container').classList.add('bomb-shake');
+            setTimeout(() => {
+                document.body.classList.remove('shake');
+                document.getElementById('bomb-container').classList.remove('bomb-shake');
+            }, 500);
+            
+            // 播放错误音效
+            playSound('error');
+            
+            addLog(`错误！${reason}`, 'danger');
+            addLog(`剩余机会: ${gameState.lives}`, 'warning');
+            
+            if (gameState.lives <= 0) {
+                gameOver(false, '机会耗尽！炸弹爆炸了！');
+            }
+        }
+        
+        // 更新生命显示
+        function updateLivesDisplay() {
+            const lives = document.getElementById('lives-display').children;
+            for (let i = 0; i < 3; i++) {
+                if (i < gameState.lives) {
+                    lives[i].classList.add('active');
+                } else {
+                    lives[i].classList.remove('active');
+                }
+            }
+        }
+        
+        // 检查胜利
+        function checkWin() {
+            if (gameState.modulesSolved >= gameState.totalModules) {
+                gameOver(true, '恭喜！你成功拆除了炸弹！');
+            }
+        }
+        
+        // 创建火焰粒子
+        function createFireParticle(x, y, intensity = 1) {
+            const container = document.getElementById('fire-container');
+            const colors = [
+                'radial-gradient(circle, #ffffff 0%, #ffff00 30%, #ff6600 60%, transparent 100%)',
+                'radial-gradient(circle, #ffff00 0%, #ff6600 40%, #ff0000 70%, transparent 100%)',
+                'radial-gradient(circle, #ff6600 0%, #ff0000 50%, #990000 80%, transparent 100%)',
+                'radial-gradient(circle, #ff0000 0%, #990000 50%, #330000 90%, transparent 100%)'
+            ];
+            
+            const particleCount = 8 * intensity;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'fire-particle';
+                
+                const size = 20 + Math.random() * 60;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 300 * intensity;
+                const tx = Math.cos(angle) * distance;
+                const ty = Math.sin(angle) * distance - 200; // 向上飘
+                
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.background = color;
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+                particle.style.setProperty('--tx', tx + 'px');
+                particle.style.setProperty('--ty', ty + 'px');
+                particle.style.animationDuration = (1.5 + Math.random() * 1.5) + 's';
+                particle.style.boxShadow = `0 0 ${size/2}px rgba(255, 100, 0, 0.8)`;
+                
+                container.appendChild(particle);
+                
+                setTimeout(() => particle.remove(), 3000);
+            }
+        }
+        
+        // 创建大爆炸效果
+        function createMegaExplosion() {
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            
+            // 屏幕震动
+            document.body.classList.add('screen-shake');
+            setTimeout(() => document.body.classList.remove('screen-shake'), 500);
+            
+            // 冲击波
+            document.getElementById('shockwave').classList.add('active');
+            setTimeout(() => document.getElementById('shockwave').classList.remove('active'), 2000);
+            
+            // 多轮火焰爆发
+            for (let wave = 0; wave < 5; wave++) {
+                setTimeout(() => {
+                    createFireParticle(centerX, centerY, 2 + wave * 0.5);
+                }, wave * 200);
+            }
+            
+            // 持续火花
+            for (let i = 0; i < 30; i++) {
+                setTimeout(() => {
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = Math.random() * 200;
+                    const x = centerX + Math.cos(angle) * distance;
+                    const y = centerY + Math.sin(angle) * distance;
+                    createSpark(x, y, 3);
+                }, i * 80);
+            }
+            
+            // 烟雾效果
+            for (let i = 0; i < 10; i++) {
+                setTimeout(() => {
+                    createSmoke(centerX + (Math.random() - 0.5) * 200, centerY + (Math.random() - 0.5) * 200);
+                }, i * 150);
+            }
+        }
+        
+        // 游戏结束
+        function gameOver(won, message) {
+            cancelAnimationFrame(gameState.timerInterval);
+            clearInterval(gameState.sparkInterval);
+            
+            const endIcon = document.getElementById('end-icon');
+            const endTitle = document.getElementById('end-title');
+            const endMessage = document.getElementById('end-message');
+            
+            if (won) {
+                document.getElementById('game-screen').classList.add('hidden');
+                document.getElementById('end-screen').classList.remove('hidden');
+                
+                endIcon.textContent = '🎉';
+                endTitle.innerHTML = '<span class="safe-text">任务完成！</span>';
+                endTitle.classList.add('heartbeat');
+                addLog('任务完成！炸弹已安全拆除！', 'success');
+                playSound('success');
+            } else {
+                // 先显示爆炸效果
+                document.getElementById('explosion').classList.add('active');
+                addLog('任务失败！炸弹爆炸！', 'danger');
+                playSound('explosion');
+                
+                // 创建大爆炸
+                createMegaExplosion();
+                
+                // 延迟显示结束界面
+                setTimeout(() => {
+                    document.getElementById('game-screen').classList.add('hidden');
+                    document.getElementById('end-screen').classList.remove('hidden');
+                    
+                    endIcon.textContent = '💥';
+                    endTitle.innerHTML = '<span class="warning-text">任务失败！</span>';
+                }, 2500);
+            }
+            
+            endMessage.textContent = message;
+            
+            // 显示最终统计 - 包含毫秒
+            const hours = Math.floor(gameState.timeRemaining / 3600);
+            const minutes = Math.floor((gameState.timeRemaining % 3600) / 60);
+            const seconds = Math.floor(gameState.timeRemaining % 60);
+            const milliseconds = Math.floor((gameState.timeRemaining % 1) * 1000);
+            document.getElementById('final-time').textContent = 
+                gameState.timeRemaining > 0 ? `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(3, '0')}` : '00:00:00.000';
+            document.getElementById('final-modules').textContent = `${gameState.modulesSolved}/${gameState.totalModules}`;
+            document.getElementById('final-lives').textContent = gameState.lives;
+        }
+        
+        // 添加日志
+        function addLog(message, type) {
+            const log = document.getElementById('system-log');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            
+            const time = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+            entry.textContent = `[${time}] ${message}`;
+            
+            if (type === 'success') {
+                entry.classList.add('safe-text');
+            } else if (type === 'danger') {
+                entry.classList.add('warning-text');
+            } else if (type === 'warning') {
+                entry.classList.add('text-yellow-400');
+            } else {
+                entry.classList.add('text-gray-400');
+            }
+            
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        // 初始化预览炸弹
+        function initPreviewBomb() {
+            const canvas = document.getElementById('preview-bomb');
+            const ctx = canvas.getContext('2d');
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = 70;
+            
+            // 炸弹主体
+            const gradient = ctx.createRadialGradient(centerX - 15, centerY - 15, 0, centerX, centerY, radius);
+            gradient.addColorStop(0, '#444');
+            gradient.addColorStop(0.3, '#222');
+            gradient.addColorStop(0.7, '#111');
+            gradient.addColorStop(1, '#000');
+            
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            // 引信
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY - radius);
+            ctx.quadraticCurveTo(centerX + 20, centerY - radius - 30, centerX + 40, centerY - radius - 20);
+            ctx.stroke();
+            
+            // 倒计时显示
+            ctx.fillStyle = '#000';
+            ctx.fillRect(centerX - 40, centerY - 25, 80, 50);
+            
+            ctx.font = 'bold 24px "Share Tech Mono", monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowColor = '#ff0000';
+            ctx.shadowBlur = 15;
+            ctx.fillStyle = '#ff0000';
+            ctx.fillText('18:00', centerX, centerY + 5);
+        }
+        
+        // 初始化
+        initBinaryBackground();
+        initPreviewBomb();
+    </script>
+</body>
+</html>
